@@ -20,10 +20,10 @@ import {
 import { h, svg } from '../dom';
 import { getLang, t } from '../i18n';
 import { icons } from '../icons';
-import { dieText, sortedDice } from '../rules/format';
+import { dieText, formatParts, sortedDice } from '../rules/format';
 import { toNotation, toSummary } from '../rules/notation';
 import { BUCKETS, expectedAverage, type Stats } from '../rules/stats';
-import { defaultRules, DIE_TYPES, type DieRec, type DieType, type KeepMode, type RollSpec } from '../rules/types';
+import { defaultRules, DIE_TYPES, type DieRec, type RollResult, type DieType, type KeepMode, type RollSpec } from '../rules/types';
 import { saveConfig, state, type TabId, notify, type HistoryEntry } from '../store';
 import { confirmDialog, promptDialog } from './dialog';
 import { toast } from './toast';
@@ -102,6 +102,19 @@ function dieChip(d: DieRec, mixed: boolean): HTMLElement {
   );
 }
 
+/** Formula line with dropped dice struck through and greyed, rerolled ones in brackets. */
+function formulaNodes(spec: RollSpec, result: RollResult, label?: string): (Node | string)[] {
+  const p = formatParts(spec, result, label);
+  const out: (Node | string)[] = [`${p.head}: `];
+  p.dice.forEach((d, i) => {
+    if (i) out.push(', ');
+    if (d.status === 'dropped') out.push(h('s', { class: 'muted' }, String(d.value)));
+    else out.push(dieText(d));
+  });
+  out.push(p.tail);
+  return out;
+}
+
 function resultView(): HTMLElement[] {
   const cur = state.current;
   if (!cur) {
@@ -135,7 +148,7 @@ function resultView(): HTMLElement[] {
   if (spec.rules.display === 'subtotals' && !result.successes && result.subtotals.length > 1) {
     out.push(h('div', { class: 'res-sub' }, ...result.subtotals.map((s) => h('span', { class: 'badge accent' }, `${s.type.toUpperCase()}: ${s.sum}`))));
   }
-  out.push(h('div', { class: 'res-formula' }, resultText()));
+  out.push(h('div', { class: 'res-formula' }, ...formulaNodes(spec, result, cur.label)));
   out.push(h('div', { class: 'chips-dice' }, ...dice.map((d) => dieChip(d, mixed))));
   if (result.modifier) out.push(h('div', { class: 'hint-line' }, `${t('result.modifier')}: ${result.modifier > 0 ? '+' : ''}${result.modifier}`));
   const sel = result.dice.find((d) => d.id === state.selected);

@@ -19,15 +19,27 @@ export function sortedDice(dice: DieRec[]): DieRec[] {
   return [...dice].sort((a, b) => DIE_TYPES.indexOf(a.type) - DIE_TYPES.indexOf(b.type) || a.id - b.id);
 }
 
-/** `4d6dl1: 6, 5, 3, ~~1~~ = 14`. */
-export function formatRoll(spec: RollSpec, result: RollResult, label?: string): string {
+export interface RollParts {
+  head: string;
+  dice: DieRec[];
+  /** Text after the dice: modifier, subtotals and total. */
+  tail: string;
+}
+
+/** The pieces of the formula line, so the UI can style dropped dice instead of printing markup. */
+export function formatParts(spec: RollSpec, result: RollResult, label?: string): RollParts {
   const head = label ? `${label} (${toNotation(spec)})` : toNotation(spec);
-  const body = sortedDice(result.dice).map(dieText).join(', ');
   const mod = result.modifier ? ` ${result.modifier < 0 ? '-' : '+'} ${Math.abs(result.modifier)}` : '';
   const unit = result.successes ? ' successes' : '';
   let tail = `= ${result.total}${unit}`;
   if (spec.rules.display === 'subtotals' && !result.successes && result.subtotals.length > 1) {
-    tail = `[${result.subtotals.map((s) => `${s.type}: ${s.sum}`).join(', ')}] ${tail}`;
+    tail = `[${result.subtotals.map((x) => `${x.type}: ${x.sum}`).join(', ')}] ${tail}`;
   }
-  return `${head}: ${body}${mod} ${tail}`;
+  return { head, dice: sortedDice(result.dice), tail: `${mod} ${tail}` };
+}
+
+/** `4d6dl1: 6, 5, 3, ~~1~~ = 14` (plain text for copying; ~~ marks a dropped die, as in Markdown). */
+export function formatRoll(spec: RollSpec, result: RollResult, label?: string): string {
+  const p = formatParts(spec, result, label);
+  return `${p.head}: ${p.dice.map(dieText).join(', ')}${p.tail}`;
 }

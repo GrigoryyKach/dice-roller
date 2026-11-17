@@ -444,3 +444,4 @@ label.set-row { cursor: pointer; }
 .set-text .path { font-size: 12px; margin-top: 6px; color: var(--text); letter-spacing: 0.02em; }
 .set-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
+.res-formula s { color: var(--muted); }

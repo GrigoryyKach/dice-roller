@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { finalize, RollSession, rollInstant } from './engine';
-import { formatRoll } from './format';
+import { formatParts, formatRoll } from './format';
 import { parseNotation, toNotation, toSummary } from './notation';
 import { addDice } from './stats';
 import { defaultRules, type DieType, type RollSpec, SIDES } from './types';
@@ -149,5 +149,14 @@ describe('rules', () => {
     const st = {};
     addDice(st, r.dice);
     expect(st).toMatchObject({ d6: { n: 2, sum: 7 }, d100: { n: 1, sum: 55 } });
+  });
+
+  it('exposes dropped dice as data so the UI never prints markup', () => {
+    const s = spec('4d6dl1');
+    const r = rollInstant(s, seq([6, 5, 3, 1]));
+    const p = formatParts(s, r);
+    expect(p.head).toBe('4d6dl1');
+    expect(p.dice.filter((d) => d.status === 'dropped').map((d) => d.value)).toEqual([1]);
+    expect(p.tail).toBe(' = 14');
   });
 });

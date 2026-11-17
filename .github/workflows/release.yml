@@ -56,6 +56,8 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force pkg | Out-Null
           Copy-Item src-tauri/target/release/DiceRoller.exe pkg/
+          # The MSVC build links the WebView2 loader statically; if a loader DLL was produced anyway, ship it next to the exe.
+          if (Test-Path src-tauri/target/release/WebView2Loader.dll) { Copy-Item src-tauri/target/release/WebView2Loader.dll pkg/ }
           Compress-Archive -Path pkg/* -DestinationPath DiceRoller-win-x64.zip -Force
 
       - name: Publish release

@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "id": "dice-roller",
+  "name": "Dice Roller",
+  "tagline": "3D physics dice for tabletop games",
+  "description": "Throw D4, D6, D8, D10, D12, D20 and D100 on a felt table and watch them tumble with real physics. Roll up to 50 dice at once, type notation like 4d6dl1, and set your own rules: keep or drop dice, exploding dice, rerolls, success counting and critical highlights. Works fully offline.",
+  "features": [
+    {
+      "title": "Real 3D dice",
+      "text": "Proper polyhedra with rounded edges and crisp numbers. The value shown always matches the face that lands up."
+    },
+    {
+      "title": "Dice tray and notation",
+      "text": "Click to add dice or type 3d6+2, 2d20kh1, 4d6dl1, d100 and 1d8+1d6+3. Up to 50 dice in one roll."
+    },
+    {
+      "title": "Configurable rules",
+      "text": "Modifier, keep or drop highest and lowest, advantage, exploding dice, rerolls, success counting and critical glows."
+    },
+    {
+      "title": "History and statistics",
+      "text": "The last 500 rolls with copy and roll-again, plus per-die distribution charts for the session and all time."
+    },
+    {
+      "title": "Presets and skins",
+      "text": "Save roll setups, and pick from six dice skins or your own colours. Quick mode skips the animation."
+    },
+    {
+      "title": "Light on resources",
+      "text": "Nothing is drawn while the table is still, so an idle window costs no CPU. One exe, no network apart from the update check."
+    }
+  ],
+  "category": "Games",
+  "accent": [
+    "#4f6bff",
+    "#8a5bff"
+  ],
+  "icon": "assets/icon.png",
+  "screenshots": [
+    "assets/screenshots/1.png",
+    "assets/screenshots/2.png",
+    "assets/screenshots/3.png"
+  ],
+  "exe": "DiceRoller.exe",
+  "asset": "DiceRoller-win-x64.zip",
+  "requirements": [
+    "Windows 10/11 x64",
+    "WebView2 runtime (preinstalled on Windows 11)"
+  ],
+  "settingsDir": "%APPDATA%\\Dice Roller",
+  "i18n": {
+    "ru": {
+      "tagline": "3D-кубики с реальной физикой для настольных игр",
+      "description": "Бросайте D4, D6, D8, D10, D12, D20 и D100 на игровой стол и смотрите, как они катятся по законам физики. Бросайте до 50 кубиков сразу, вводите записи вроде 4d6dl1 и настраивайте правила: оставить или убрать кубики, взрывные кубики, переброс, подсчёт успехов и подсветка критов. Работает полностью офлайн.",
+      "category": "Игры",
+      "features": [
+        {
+          "title": "Настоящие 3D-кубики",
+          "text": "Правильные многогранники со скруглёнными рёбрами и чёткими цифрами. Показанное значение всегда совпадает с верхней гранью."
+        },
+        {
+          "title": "Панель кубиков и запись броска",
+          "text": "Добавляйте кубики щелчком или вводите 3d6+2, 2d20kh1, 4d6dl1, d100 и 1d8+1d6+3. До 50 кубиков за бросок."
+        },
+        {
+          "title": "Настраиваемые правила",
+          "text": "Модификатор, оставить или убрать лучшие и худшие, преимущество, взрывные кубики, переброс, подсчёт успехов и подсветка критов."
+        },
+        {
+          "title": "История и статистика",
+          "text": "Последние 500 бросков с копированием и повтором, а также графики распределения по каждому кубику за сессию и за всё время."
+        },
+        {
+          "title": "Наборы и оформление",
+          "text": "Сохраняйте наборы бросков, выбирайте один из шести видов кубиков или свои цвета. Быстрый режим пропускает анимацию."
+        },
+        {
+          "title": "Бережёт ресурсы",
+          "text": "Пока стол неподвижен, ничего не рисуется, поэтому окно в простое не нагружает процессор. Один exe, сеть нужна только для проверки обновлений."
+        }
+      ],
+      "requirements": [
+        "Windows 10/11 x64",
+        "WebView2 (уже есть в Windows 11)"
+      ]
+    },
+    "uk": {
+      "tagline": "3D-кубики з реальною фізикою для настільних ігор",
+      "description": "Кидайте D4, D6, D8, D10, D12, D20 і D100 на ігровий стіл та дивіться, як вони котяться за законами фізики. Кидайте до 50 кубиків одразу, вводьте записи на кшталт 4d6dl1 і налаштовуйте правила: залишити або прибрати кубики, вибухові кубики, перекидання, підрахунок успіхів та підсвітка критів. Працює повністю офлайн.",
+      "category": "Ігри",
+      "features": [
+        {
+          "title": "Справжні 3D-кубики",
+          "text": "Правильні багатогранники із заокругленими ребрами та чіткими цифрами. Показане значення завжди збігається з верхньою гранню."
+        },
+        {
+          "title": "Панель кубиків і запис кидка",
+          "text": "Додавайте кубики клацанням або вводьте 3d6+2, 2d20kh1, 4d6dl1, d100 та 1d8+1d6+3. До 50 кубиків за кидок."
+        },
+        {
+          "title": "Гнучкі правила",
+          "text": "Модифікатор, залишити або прибрати найкращі й найгірші, перевага, вибухові кубики, перекидання, підрахунок успіхів та підсвітка критів."
+        },
+        {
+          "title": "Історія та статистика",
+          "text": "Останні 500 кидків із копіюванням і повтором, а також графіки розподілу за кожним кубиком за сесію та за весь час."
+        },
+        {
+          "title": "Набори та вигляд",
+          "text": "Зберігайте набори кидків, обирайте один із шести виглядів кубиків або власні кольори. Швидкий режим пропускає анімацію."
+        },
+        {
+          "title": "Бережливий до ресурсів",
+          "text": "Поки стіл нерухомий, нічого не малюється, тож вікно в простої не навантажує процесор. Один exe, мережа потрібна лише для перевірки оновлень."
+        }
+      ],
+      "requirements": [
+        "Windows 10/11 x64",
+        "WebView2 (уже є у Windows 11)"
+      ]
+    }
+  }
+}

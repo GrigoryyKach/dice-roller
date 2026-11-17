@@ -8,6 +8,7 @@ import { getLang, LANGS, type Lang, setLang, t } from '../i18n';
 import { DIE_TYPES } from '../rules/types';
 import { notify, saveConfig, state, type Theme } from '../store';
 import { modalHeader, openModal } from './dialog';
+import { supportSection } from './support';
 
 let open: { close: () => void } | null = null;
 
@@ -169,6 +170,9 @@ function build(): HTMLElement[] {
       h('div', { class: 'set-row' }, h('div', { class: 'set-text' }, status), h('div', { class: 'set-actions' }, checkBtn, updBtn)),
     ),
   );
+
+  // Support
+  out.push(...supportSection());
 
   // About
   out.push(h('div', { class: 'sec-title' }, t('settings.about')));

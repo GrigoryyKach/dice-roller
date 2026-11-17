@@ -178,7 +178,7 @@ fn open_in_browser(url: &str) {
 /// Only links to GitHub are opened.
 #[tauri::command]
 fn open_url(url: String) {
-    if url.starts_with("https://github.com/") {
+    if url.starts_with("https://github.com/") || url == "https://donatello.to/MicsGame" {
         open_in_browser(&url);
     }
 }

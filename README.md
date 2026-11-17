@@ -105,3 +105,7 @@ Dependencies are pinned to exact versions: three.js 0.187.0 and `@dimforge/rapie
 ## Release
 
 A tag `vX.Y.Z` runs `.github/workflows/release.yml`: it checks that the versions in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml` match the tag, runs the tests, builds the exe and publishes `DiceRoller-win-x64.zip`.
+
+## Support
+
+If you find Dice Roller useful, you can support its development: https://donatello.to/MicsGame

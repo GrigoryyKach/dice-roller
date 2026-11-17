@@ -27,7 +27,7 @@ import { resolveSkin, type SkinSettings, type SkinSpec } from '../dice/skins';
 import { atlasFor, type LabelStyle } from '../dice/textures';
 import type { DieType } from '../rules/types';
 import { SIDES } from '../rules/types';
-import { DiceWorld, type Flick, initPhysics, makeLaunches, type SimDie, TABLE } from '../sim/physics';
+import { DiceWorld, type Flick, initPhysics, makeLaunches, MAX_ROLL, type SimDie, TABLE } from '../sim/physics';
 import { Clatter } from './audio';
 import { buildTable, RAIL, RAIL_H } from './table';
 
@@ -72,7 +72,7 @@ export class Stage {
 
   private renderer: WebGLRenderer;
   private scene = new Scene();
-  private camera = new PerspectiveCamera(34, 1, 0.5, 200);
+  private camera = new PerspectiveCamera(30, 1, 0.5, 200);
   private dice = new Map<number, DieView>();
   private world: DiceWorld | null = null;
   private colliders = new Map<number, SimDie>();
@@ -338,7 +338,7 @@ export class Stage {
         }
         this.clatter.hit(power);
       });
-      if (world.allResting() || world.time - roll.t0 > 14) {
+      if (world.allResting() || world.time - roll.t0 > MAX_ROLL) {
         done = true;
         break;
       }
@@ -443,7 +443,7 @@ export class Stage {
 
   /** Moves the camera back until the whole table (rails included) is inside the view. */
   private fitCamera(): void {
-    const pitch = (54 * Math.PI) / 180;
+    const pitch = (62 * Math.PI) / 180;
     const dir = new Vector3(0, Math.sin(pitch), Math.cos(pitch));
     const hx = TABLE.w / 2 + RAIL;
     const hz = TABLE.d / 2 + RAIL;

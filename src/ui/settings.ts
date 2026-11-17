@@ -137,7 +137,7 @@ function build(): HTMLElement[] {
   out.push(skinCard);
 
   // Behaviour
-  out.push(h('div', { class: 'sec-title' }, t('settings.d6')));
+  out.push(h('div', { class: 'sec-title' }, t('settings.rolling')));
   out.push(
     h(
       'div',

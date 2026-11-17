@@ -10,6 +10,12 @@ export const GRAVITY = -48;
 export const DT = 1 / 120;
 /** Edge rounding of the dice, as a fraction of their circumradius. */
 export const ROUND = 0.07;
+/** Seconds after the throw when extra damping starts. */
+const SETTLE_AFTER = 2.2;
+/** A resting die counts as lying flat when its top face is within about 14 degrees of vertical. */
+const FLAT = 0.97;
+/** A roll is cut off after this many seconds of simulated time. */
+export const MAX_ROLL = 9;
 
 let ready: Promise<void> | null = null;
 export function initPhysics(): Promise<void> {
@@ -49,6 +55,8 @@ export interface SimDie {
   collider: RAPIER.Collider;
   nudges: number;
   restFor: number;
+  /** Seconds since the die was thrown. */
+  age: number;
 }
 
 export interface Launch {
@@ -112,7 +120,7 @@ export class DiceWorld {
         .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
       body,
     );
-    const die: SimDie = { tag, kind, poly, body, collider, nudges: 0, restFor: 0 };
+    const die: SimDie = { tag, kind, poly, body, collider, nudges: 0, restFor: 0, age: 0 };
     this.dice.push(die);
     return die;
   }
@@ -131,6 +139,11 @@ export class DiceWorld {
     this.world.step(this.events);
     this.time += DT;
     for (const d of this.dice) {
+      // After a few seconds the felt drags the die to a stop faster, so a roll never drags on.
+      d.age += DT;
+      const extra = Math.max(0, d.age - SETTLE_AFTER);
+      d.body.setLinearDamping(0.12 + extra * 1.2);
+      d.body.setAngularDamping(0.3 + extra * 2.2);
       const lv = d.body.linvel();
       const av = d.body.angvel();
       const calm = lv.x * lv.x + lv.y * lv.y + lv.z * lv.z < 0.03 && av.x * av.x + av.y * av.y + av.z * av.z < 0.12;
@@ -145,7 +158,7 @@ export class DiceWorld {
 
   /** The die has been calm for a while and lies flat on a face. */
   settled(d: SimDie): boolean {
-    return d.restFor > 0.3 && flatness(d.poly, this.quat(d)) > 0.995;
+    return d.restFor > 0.3 && flatness(d.poly, this.quat(d)) > FLAT;
   }
 
   /**
@@ -156,12 +169,13 @@ export class DiceWorld {
     let all = true;
     for (const d of this.dice) {
       if (d.restFor <= 0.3) { all = false; continue; }
-      if (flatness(d.poly, this.quat(d)) > 0.995) continue;
-      if (d.nudges >= 4) continue; // give up: read the nearest face
+      if (flatness(d.poly, this.quat(d)) > FLAT) continue;
+      if (d.nudges >= 3) continue; // give up: read the nearest face
       d.nudges++;
       d.restFor = 0;
-      d.body.applyImpulse({ x: (Math.random() - 0.5) * 2, y: 9 * d.body.mass(), z: (Math.random() - 0.5) * 2 }, true);
-      d.body.applyTorqueImpulse({ x: (Math.random() - 0.5) * 6, y: (Math.random() - 0.5) * 6, z: (Math.random() - 0.5) * 6 }, true);
+      d.age = Math.min(d.age, SETTLE_AFTER); // let the nudged die tumble freely for a moment
+      d.body.applyImpulse({ x: (Math.random() - 0.5) * 6 * d.body.mass(), y: (10 + 2 * d.nudges) * d.body.mass(), z: (Math.random() - 0.5) * 6 * d.body.mass() }, true);
+      d.body.applyTorqueImpulse({ x: (Math.random() - 0.5) * 8 * d.body.mass(), y: (Math.random() - 0.5) * 8 * d.body.mass(), z: (Math.random() - 0.5) * 8 * d.body.mass() }, true);
       all = false;
     }
     return all;
@@ -215,7 +229,7 @@ export function makeLaunches(n: number, rng: Rng, flick?: Flick): Launch[] {
     const px = cx + dir[0] * gx * cell - dir[1] * gz * cell + (rng() - 0.5) * 0.5;
     const pz = cz + dir[1] * gx * cell + dir[0] * gz * cell + (rng() - 0.5) * 0.5;
     const py = 3.6 + layer * 2.3 + rng() * 0.5;
-    const speed = (13 + rng() * 9) * power * 1.35;
+    const speed = (15 + rng() * 11) * power * 1.55;
     const jitter = (rng() - 0.5) * 0.7;
     const vx = Math.cos(ang + jitter) * speed;
     const vz = Math.sin(ang + jitter) * speed;
@@ -230,7 +244,7 @@ export function makeLaunches(n: number, rng: Rng, flick?: Flick): Launch[] {
 }
 
 /** Runs the world until every die rests or `maxTime` seconds of simulated time pass. Returns the elapsed simulated time. */
-export function runToRest(world: DiceWorld, maxTime = 12): number {
+export function runToRest(world: DiceWorld, maxTime = MAX_ROLL): number {
   const t0 = world.time;
   while (world.time - t0 < maxTime) {
     world.step();

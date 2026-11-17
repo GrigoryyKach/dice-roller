@@ -152,7 +152,7 @@ fn check_update(repo: String) -> Option<Latest> {
 pub fn valid_repo(repo: &str) -> bool {
     let mut parts = repo.split('/');
     let (Some(a), Some(b), None) = (parts.next(), parts.next(), parts.next()) else { return false };
-    let ok = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.');
+    let ok = |s: &str| !s.is_empty() && s != "." && s != ".." && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.');
     ok(a) && ok(b)
 }
 

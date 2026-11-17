@@ -15,7 +15,7 @@ describe('physics roll', () => {
     const rng = seeded(7);
     makeLaunches(10, rng).forEach((l, i) => world.add(kind, i, l));
     const t = runToRest(world);
-    expect(t).toBeLessThan(12);
+    expect(t).toBeLessThanOrEqual(9.1); // the simulation is cut off at 9 s of simulated time
     for (const d of world.dice) {
       const p = d.body.translation();
       expect(Math.abs(p.x)).toBeLessThan(TABLE.w / 2);
@@ -39,7 +39,7 @@ describe('physics roll', () => {
   });
 
   it('small fairness run stays within the chi-square bound', async () => {
-    const rows = await runFairness(240, { batch: 12 });
+    const rows = await runFairness(480, { batch: 12 });
     console.log(formatFairness(rows));
     for (const r of rows) expect(r.pass, `${r.kind} chi2 ${r.chi2} limit ${r.limit}`).toBe(true);
   });

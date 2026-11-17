@@ -83,6 +83,11 @@ function renderAll(): void {
 // ───────────── keyboard ─────────────
 
 document.addEventListener('keydown', (e) => {
+  // Diagnostics: Ctrl+Alt+F shows the frame rate of the last roll.
+  if (e.ctrlKey && e.altKey && e.code === 'KeyF' && ctx.stage) {
+    toast(`${ctx.stage.lastRollFps.toFixed(0)} fps during the last roll, ${ctx.stage.count} dice on the table`, 'info', 6000);
+    return;
+  }
   if (e.code !== 'Space' || e.repeat) return;
   const el = document.activeElement as HTMLElement | null;
   if (document.querySelector('.modal-backdrop')) return;

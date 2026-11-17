@@ -3,8 +3,8 @@
 import { BoxGeometry, CanvasTexture, Group, Mesh, MeshStandardMaterial, PlaneGeometry, RepeatWrapping, SRGBColorSpace } from 'three';
 import { TABLE } from '../sim/physics';
 
-export const RAIL = 1.5;
-export const RAIL_H = 1.5;
+export const RAIL = 1.3;
+export const RAIL_H = 1.2;
 
 function noise(g: CanvasRenderingContext2D, w: number, h: number, count: number, alpha: number, light: boolean): void {
   for (let i = 0; i < count; i++) {

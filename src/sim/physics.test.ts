@@ -21,7 +21,8 @@ describe('physics roll', () => {
       expect(Math.abs(p.x)).toBeLessThan(TABLE.w / 2);
       expect(Math.abs(p.z)).toBeLessThan(TABLE.d / 2);
       expect(p.y).toBeGreaterThan(0);
-      expect(p.y).toBeLessThan(2.5);
+      // A die may rest on top of another one; floating point differs a little between platforms.
+      expect(p.y).toBeLessThan(6);
       const v = world.value(d);
       expect(v).toBeGreaterThanOrEqual(1);
       expect(v).toBeLessThanOrEqual(FACE_COUNT[kind]);

@@ -1,7 +1,8 @@
 name: Release
 
-# Builds DiceRoller.exe and publishes a GitHub Release when a vX.Y.Z tag is pushed.
-# The NIMVORO launcher downloads DiceRoller-win-x64.zip from the release (name set in nimvoro.json).
+# Builds DiceRoller.exe (Windows) and the Linux binary, then publishes one GitHub Release when a vX.Y.Z tag is pushed.
+# The NIMVORO launcher downloads DiceRoller-win-x64.zip on Windows and DiceRoller-linux-x64.tar.gz on Linux
+# (names set in nimvoro.json).
 on:
   push:
     tags: ["v*"]
@@ -11,7 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
@@ -60,11 +61,88 @@ jobs:
           if (Test-Path src-tauri/target/release/WebView2Loader.dll) { Copy-Item src-tauri/target/release/WebView2Loader.dll pkg/ }
           Compress-Archive -Path pkg/* -DestinationPath DiceRoller-win-x64.zip -Force
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win
+          path: DiceRoller-win-x64.zip
+          if-no-files-found: error
+
+  linux:
+    # Oldest supported runner image: the binary links the glibc and WebKitGTK of Ubuntu 22.04, so it runs on newer systems too.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Versions match the tag
+        run: |
+          pkg=$(node -p "require('./package.json').version")
+          conf=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          cargo=$(grep -m1 -E '^version\s*=' src-tauri/Cargo.toml | sed -E 's/^version\s*=\s*"([^"]+)".*/\1/')
+          if [ "$pkg" != "$conf" ] || [ "$pkg" != "$cargo" ]; then
+            echo "Version mismatch: package.json $pkg, tauri.conf.json $conf, Cargo.toml $cargo"; exit 1
+          fi
+          if [ "${{ github.ref_type }}" = "tag" ] && [ "${{ github.ref_name }}" != "v$pkg" ]; then
+            echo "Tag ${{ github.ref_name }} does not match version $pkg"; exit 1
+          fi
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libxdo-dev
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      - name: Unit tests (rules, dice geometry, physics)
+        run: npm test
+
+      - name: Type check and build the UI
+        run: npm run build
+
+      - name: Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Build the binary
+        run: npx tauri build --no-bundle
+
+      - name: Package
+        run: |
+          mkdir pkg
+          install -m 755 src-tauri/target/release/DiceRoller pkg/dice-roller
+          install -m 644 assets/icon.png pkg/icon.png
+          tar --owner=0 --group=0 -czf DiceRoller-linux-x64.tar.gz -C pkg dice-roller icon.png
+          tar -tvzf DiceRoller-linux-x64.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: DiceRoller-linux-x64.tar.gz
+          if-no-files-found: error
+
+  publish:
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+
       - name: Publish release
-        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          $tag = "${{ github.ref_name }}"
-          if ($tag -notmatch '^v') { $tag = "v$env:VERSION" }
-          gh release create $tag "DiceRoller-win-x64.zip" --title "Dice Roller $tag" --generate-notes --verify-tag
+          tag="${{ github.ref_name }}"
+          case "$tag" in v*) ;; *) echo "Not a tag run: nothing to publish"; ls -l assets; exit 0 ;; esac
+          gh release create "$tag" assets/DiceRoller-win-x64.zip assets/DiceRoller-linux-x64.tar.gz --title "Dice Roller $tag" --generate-notes --verify-tag

@@ -3,7 +3,7 @@
   "id": "dice-roller",
   "name": "Dice Roller",
   "tagline": "3D physics dice for tabletop games",
-  "description": "Throw D4, D6, D8, D10, D12, D20 and D100 on a felt table and watch them tumble with real physics. Roll up to 50 dice at once, type notation like 4d6dl1, and set your own rules: keep or drop dice, exploding dice, rerolls, success counting and critical highlights. Works fully offline.",
+  "description": "Throw D4, D6, D8, D10, D12, D20 and D100 on a felt table and watch them tumble with real physics. Roll up to 50 dice at once, type notation like 4d6dl1, and set your own rules: keep or drop dice, exploding dice, rerolls, success counting and critical highlights. Works fully offline. Runs on Windows and Linux.",
   "features": [
     {
       "title": "Real 3D dice",
@@ -27,7 +27,7 @@
     },
     {
       "title": "Light on resources",
-      "text": "Nothing is drawn while the table is still, so an idle window costs no CPU. One exe, no network apart from the update check."
+      "text": "Nothing is drawn while the table is still, so an idle window costs no CPU. One executable, no network apart from the update check."
     }
   ],
   "category": "Games",
@@ -44,15 +44,24 @@
   ],
   "exe": "DiceRoller.exe",
   "asset": "DiceRoller-win-x64.zip",
+  "platforms": [
+    "windows",
+    "linux"
+  ],
   "requirements": [
     "Windows 10/11 x64",
     "WebView2 runtime (preinstalled on Windows 11)"
   ],
+  "linux": {
+    "asset": "DiceRoller-linux-x64.tar.gz",
+    "exe": "dice-roller",
+    "requirements": "Linux x86_64 (X11 or Wayland), libwebkit2gtk-4.1 and libgtk-3 (preinstalled on most desktops; on Ubuntu/Debian: sudo apt install libwebkit2gtk-4.1-0)"
+  },
   "settingsDir": "%APPDATA%\\Dice Roller",
   "i18n": {
     "ru": {
       "tagline": "3D-кубики с реальной физикой для настольных игр",
-      "description": "Бросайте D4, D6, D8, D10, D12, D20 и D100 на игровой стол и смотрите, как они катятся по законам физики. Бросайте до 50 кубиков сразу, вводите записи вроде 4d6dl1 и настраивайте правила: оставить или убрать кубики, взрывные кубики, переброс, подсчёт успехов и подсветка критов. Работает полностью офлайн.",
+      "description": "Бросайте D4, D6, D8, D10, D12, D20 и D100 на игровой стол и смотрите, как они катятся по законам физики. Бросайте до 50 кубиков сразу, вводите записи вроде 4d6dl1 и настраивайте правила: оставить или убрать кубики, взрывные кубики, переброс, подсчёт успехов и подсветка критов. Работает полностью офлайн. Работает в Windows и Linux.",
       "category": "Игры",
       "features": [
         {
@@ -77,17 +86,20 @@
         },
         {
           "title": "Бережёт ресурсы",
-          "text": "Пока стол неподвижен, ничего не рисуется, поэтому окно в простое не нагружает процессор. Один exe, сеть нужна только для проверки обновлений."
+          "text": "Пока стол неподвижен, ничего не рисуется, поэтому окно в простое не нагружает процессор. Один исполняемый файл, сеть нужна только для проверки обновлений."
         }
       ],
       "requirements": [
         "Windows 10/11 x64",
         "WebView2 (уже есть в Windows 11)"
-      ]
+      ],
+      "linux": {
+        "requirements": "Linux x86_64 (X11 или Wayland), libwebkit2gtk-4.1 и libgtk-3 (есть на большинстве рабочих столов; в Ubuntu/Debian: sudo apt install libwebkit2gtk-4.1-0)"
+      }
     },
     "uk": {
       "tagline": "3D-кубики з реальною фізикою для настільних ігор",
-      "description": "Кидайте D4, D6, D8, D10, D12, D20 і D100 на ігровий стіл та дивіться, як вони котяться за законами фізики. Кидайте до 50 кубиків одразу, вводьте записи на кшталт 4d6dl1 і налаштовуйте правила: залишити або прибрати кубики, вибухові кубики, перекидання, підрахунок успіхів та підсвітка критів. Працює повністю офлайн.",
+      "description": "Кидайте D4, D6, D8, D10, D12, D20 і D100 на ігровий стіл та дивіться, як вони котяться за законами фізики. Кидайте до 50 кубиків одразу, вводьте записи на кшталт 4d6dl1 і налаштовуйте правила: залишити або прибрати кубики, вибухові кубики, перекидання, підрахунок успіхів та підсвітка критів. Працює повністю офлайн. Працює у Windows і Linux.",
       "category": "Ігри",
       "features": [
         {
@@ -112,13 +124,16 @@
         },
         {
           "title": "Бережливий до ресурсів",
-          "text": "Поки стіл нерухомий, нічого не малюється, тож вікно в простої не навантажує процесор. Один exe, мережа потрібна лише для перевірки оновлень."
+          "text": "Поки стіл нерухомий, нічого не малюється, тож вікно в простої не навантажує процесор. Один виконуваний файл, мережа потрібна лише для перевірки оновлень."
         }
       ],
       "requirements": [
         "Windows 10/11 x64",
         "WebView2 (уже є у Windows 11)"
-      ]
+      ],
+      "linux": {
+        "requirements": "Linux x86_64 (X11 або Wayland), libwebkit2gtk-4.1 і libgtk-3 (є на більшості робочих столів; в Ubuntu/Debian: sudo apt install libwebkit2gtk-4.1-0)"
+      }
     }
   }
 }

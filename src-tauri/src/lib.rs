@@ -7,12 +7,14 @@
 //! The 3D scene, the physics and the dice rules live in the TypeScript frontend (`src/`).
 
 use serde::{Deserialize, Serialize};
+#[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
 use tauri::{Manager, PhysicalPosition, PhysicalSize, WindowEvent};
 
+#[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 // ───────────── files ─────────────
@@ -110,10 +112,20 @@ fn exit_app(app: tauri::AppHandle) {
 
 // ───────────── updates (NIMVORO contract) ─────────────
 
-/// Path to NIMVORO.exe, which the launcher records in `%APPDATA%\NIMVORO\launcher.json`.
+/// Folder that holds `launcher.json`: `%APPDATA%\NIMVORO` on Windows, `~/.config/NIMVORO` on Linux.
+#[cfg(windows)]
+fn nimvoro_dir() -> Option<PathBuf> {
+    Some(PathBuf::from(std::env::var_os("APPDATA")?).join("NIMVORO"))
+}
+
+#[cfg(not(windows))]
+fn nimvoro_dir() -> Option<PathBuf> {
+    Some(dirs::config_dir()?.join("NIMVORO"))
+}
+
+/// Path to the launcher (NIMVORO.exe, or the AppImage / binary on Linux), which it records in `launcher.json`.
 pub fn launcher_path() -> Option<PathBuf> {
-    let dir = std::env::var_os("APPDATA")?;
-    let text = read_text(&PathBuf::from(dir).join("NIMVORO").join("launcher.json"))?;
+    let text = read_text(&nimvoro_dir()?.join("launcher.json"))?;
     let v: serde_json::Value = serde_json::from_str(&text).ok()?;
     let p = PathBuf::from(v.get("path")?.as_str()?);
     p.exists().then_some(p)
@@ -132,13 +144,13 @@ fn check_update(repo: String) -> Option<Latest> {
         return None;
     }
     let url = format!("https://api.github.com/repos/{repo}/releases/latest");
-    let out = Command::new("curl.exe")
-        .args(["-sfL", "--max-time", "10", "-H", "Accept: application/vnd.github+json", "-A", "NIMVORO-updater", &url])
+    let mut cmd = Command::new(if cfg!(windows) { "curl.exe" } else { "curl" });
+    cmd.args(["-sfL", "--max-time", "10", "-H", "Accept: application/vnd.github+json", "-A", "NIMVORO-updater", &url])
         .stdin(Stdio::null())
-        .stderr(Stdio::null())
-        .creation_flags(CREATE_NO_WINDOW)
-        .output()
-        .ok()?;
+        .stderr(Stdio::null());
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    let out = cmd.output().ok()?;
     if !out.status.success() {
         return None;
     }
@@ -156,7 +168,7 @@ pub fn valid_repo(repo: &str) -> bool {
     ok(a) && ok(b)
 }
 
-/// Hands the update to the launcher (`NIMVORO.exe --update <id>`). Returns true when the app should exit.
+/// Hands the update to the launcher (`<launcher> --update <id>`). Returns true when the app should exit.
 /// Without a launcher the release page opens in the browser instead.
 #[tauri::command]
 fn apply_update(id: String, repo: String) -> bool {
@@ -171,8 +183,15 @@ fn apply_update(id: String, repo: String) -> bool {
     false
 }
 
+#[cfg(windows)]
 fn open_in_browser(url: &str) {
     let _ = Command::new("rundll32.exe").args(["url.dll,FileProtocolHandler", url]).creation_flags(CREATE_NO_WINDOW).spawn();
+}
+
+/// Linux: the default browser through xdg-open (callers already restrict the URL).
+#[cfg(not(windows))]
+fn open_in_browser(url: &str) {
+    let _ = Command::new("xdg-open").arg(url).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn();
 }
 
 /// Only links to GitHub are opened.

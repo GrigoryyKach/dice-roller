@@ -1,7 +1,30 @@
 # Dice Roller
 
 A desktop dice roller for tabletop games, part of the NIMVORO utility suite. Throw D4, D6, D8, D10, D12, D20 and D100 on a felt table and watch them tumble with real physics.
-Tauri 2: Rust shell, TypeScript front end (no UI framework), three.js for rendering and Rapier for physics. A single exe that works fully offline.
+Tauri 2: Rust shell, TypeScript front end (no UI framework), three.js for rendering and Rapier for physics. A single executable that works fully offline, on Windows and Linux.
+
+## Platforms
+
+- **Windows 10/11 x64.** Needs the WebView2 runtime (preinstalled on Windows 11).
+- **Linux x86_64**, X11 or Wayland. Built on Ubuntu 22.04, so it runs on that and newer distributions. The window is a WebKitGTK view, so the system needs `libwebkit2gtk-4.1` and GTK 3 (on Ubuntu/Debian: `sudo apt install libwebkit2gtk-4.1-0`; most desktops have them already). 3D rendering uses WebGL; without a GPU driver, Mesa software rendering works, only slower.
+
+### Linux install and run
+
+The easiest way is the NIMVORO launcher, which installs and updates the tool and adds an application menu entry.
+By hand: download `DiceRoller-linux-x64.tar.gz` from the latest release, unpack it and run the binary:
+
+```bash
+tar -xzf DiceRoller-linux-x64.tar.gz
+./dice-roller
+```
+
+The archive holds the `dice-roller` executable and `icon.png`; nothing needs installing. Links open through `xdg-open`.
+
+Known Linux notes:
+
+- The window has its own title bar (no system decorations), so it looks the same everywhere. On Wayland, dragging and resizing are handled by the toolkit; very old compositors may not support moving by dragging.
+- Window position is saved but not restored on Wayland, where applications cannot place their own windows. Size and maximised state are restored.
+- If the table is black on a very old or virtual GPU, start with `WEBKIT_DISABLE_COMPOSITING_MODE=1 ./dice-roller`.
 
 ## Languages
 
@@ -11,7 +34,7 @@ The choice is saved to the config.
 
 ## Theme
 
-Settings → Theme: System (default, follows Windows live), Light or Dark.
+Settings → Theme: System (default, follows the Windows or desktop theme), Light or Dark.
 
 ## Features
 
@@ -60,7 +83,7 @@ The rules are implemented as pure TypeScript in `src/rules/`, separate from rend
 
 ## Files
 
-Settings live in `%APPDATA%\Dice Roller`:
+Settings live in `%APPDATA%\Dice Roller` on Windows and in `~/.config/Dice Roller` (`$XDG_CONFIG_HOME`) on Linux:
 
 - `config.json`: settings, the current selection and rules, presets;
 - `history.json`: the last 500 rolls;
@@ -71,7 +94,7 @@ Files are written atomically (temporary file, then rename) and read tolerantly (
 
 ## Updates
 
-The app checks the latest GitHub release on start (switch it off in Settings) and has a **Check now** button. An update is handed to the NIMVORO launcher (`NIMVORO.exe --update dice-roller`, found through `%APPDATA%\NIMVORO\launcher.json`).
+The app checks the latest GitHub release on start (switch it off in Settings) and has a **Check now** button. An update is handed to the NIMVORO launcher (`<launcher> --update dice-roller`, found through `%APPDATA%\NIMVORO\launcher.json` on Windows or `~/.config/NIMVORO/launcher.json` on Linux).
 Without the launcher, the releases page opens in the browser. This is the only network use.
 
 ## Physics and fairness
@@ -81,7 +104,7 @@ Dice are convex rigid bodies simulated with [Rapier](https://rapier.rs) (WebAsse
 A fairness check is built in. It throws dice through the real physics without rendering and compares the distribution of faces with the uniform one (chi-square test, p = 0.001):
 
 ```text
-DiceRoller.exe --dev-fairness 1200
+DiceRoller.exe --dev-fairness 1200      # on Linux: ./dice-roller --dev-fairness 1200
 ```
 
 It writes `fairness.txt` to the settings folder (or to the path given with `--out <file>`) and exits. The same code runs in the unit tests.
@@ -93,18 +116,20 @@ npm install
 npm run dev          # Vite dev server (the UI also works in a plain browser, settings go to localStorage)
 npm test             # vitest: rules, notation, dice geometry, physics and fairness
 npm run build        # type check and bundle the UI
-npx tauri build --no-bundle   # builds src-tauri/target/release/DiceRoller.exe
+npx tauri build --no-bundle   # builds src-tauri/target/release/DiceRoller.exe (DiceRoller on Linux)
 cargo test --manifest-path src-tauri/Cargo.toml
 npm run icon         # regenerates assets/icon.png, assets/icon.ico and src-tauri/icons
 ```
 
 Locally there is no MSVC linker, so the GNU (MinGW) toolchain is used; CI builds with MSVC. `src-tauri/build.rs` hides MinGW's default manifest so that the Tauri manifest is kept.
 
-Dependencies are pinned to exact versions: three.js 0.187.0 and `@dimforge/rapier3d-compat` 0.21.0 are bundled into the exe; nothing is loaded from a CDN.
+On Linux, install the build packages first: `build-essential pkg-config libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libxdo-dev`.
+
+Dependencies are pinned to exact versions: three.js 0.187.0 and `@dimforge/rapier3d-compat` 0.21.0 are bundled into the executable; nothing is loaded from a CDN.
 
 ## Release
 
-A tag `vX.Y.Z` runs `.github/workflows/release.yml`: it checks that the versions in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml` match the tag, runs the tests, builds the exe and publishes `DiceRoller-win-x64.zip`.
+A tag `vX.Y.Z` runs `.github/workflows/release.yml`: it checks that the versions in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml` match the tag, runs the tests, builds on `windows-latest` and `ubuntu-22.04` in parallel, and publishes one release with `DiceRoller-win-x64.zip` and `DiceRoller-linux-x64.tar.gz`.
 
 ## Support
 

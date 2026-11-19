@@ -47,8 +47,8 @@ function syncInput(force = false): void {
 
 const chipsEl = h('div', { class: 'chips' });
 const summary = h('div', { class: 'summary' });
-const rollBtn = h('button', { class: 'btn primary roll', onclick: () => void roll() });
-const clearBtn = h('button', { class: 'btn ghost small', onclick: () => clearDice() }, t('tray.clear'));
+const rollBtn = h('button', { class: 'btn primary large roll', onclick: () => void roll() });
+const clearBtn = h('button', { class: 'btn small', onclick: () => clearDice() }, t('tray.clear'));
 
 export const trayEl = h(
   'footer',
@@ -68,7 +68,7 @@ export function renderTray(): void {
       const main = h(
         'button',
         { class: 'chip-main', title: full ? t('tray.limit', { n: MAX_DICE }) : `${t('tray.add', { die: name })}. ${t('tray.add.hint')}`, onclick: () => addDie(type, 1) },
-        svg(dieIcons[type]),
+        svg(dieIcons[type], 'ico die'),
         h('span', { class: 'chip-name' }, name),
       );
       main.addEventListener('contextmenu', (e) => {

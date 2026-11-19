@@ -81,7 +81,7 @@ function build(): HTMLElement[] {
   const c = state.config;
   const out: HTMLElement[] = [];
 
-  out.push(h('div', { class: 'sec-title' }, t('settings.language')));
+  out.push(h('div', { class: 'section-title' }, t('settings.language')));
   const lang = h('select', { class: 'select', 'aria-label': t('settings.language') }, ...LANGS.map((l) => h('option', { value: l.code }, l.name))) as HTMLSelectElement;
   lang.value = getLang();
   lang.addEventListener('change', () => change(() => { c.language = lang.value as Lang; setLang(c.language); }));
@@ -103,7 +103,7 @@ function build(): HTMLElement[] {
   );
 
   // Dice skins
-  out.push(h('div', { class: 'sec-title' }, t('settings.skin')));
+  out.push(h('div', { class: 'section-title' }, t('settings.skin')));
   const skinCard = h('div', { class: 'set-card' });
   skinCard.append(setting(t('settings.skin.all'), null, swatches(c.skins.all, (id) => change(() => (c.skins.all = id)))));
   const usesCustom = c.skins.all === 'custom' || Object.values(c.skins.per).includes('custom');
@@ -138,7 +138,7 @@ function build(): HTMLElement[] {
   out.push(skinCard);
 
   // Behaviour
-  out.push(h('div', { class: 'sec-title' }, t('settings.rolling')));
+  out.push(h('div', { class: 'section-title' }, t('settings.rolling')));
   out.push(
     h(
       'div',
@@ -155,9 +155,9 @@ function build(): HTMLElement[] {
   );
 
   // Updates
-  out.push(h('div', { class: 'sec-title' }, t('settings.updates')));
+  out.push(h('div', { class: 'section-title' }, t('settings.updates')));
   const status = h('div', { class: 'hint' }, statusText());
-  const checkBtn = h('button', { class: 'btn ghost small', disabled: state.updateStatus === 'checking', onclick: () => void checkUpdates() }, svg(icons.again), t('settings.updates.now'));
+  const checkBtn = h('button', { class: 'btn small', disabled: state.updateStatus === 'checking', onclick: () => void checkUpdates() }, svg(icons.again), t('settings.updates.now'));
   const updBtn =
     state.updateStatus === 'available'
       ? h('button', { class: 'btn primary small', onclick: () => void applyUpdate() }, svg(icons.download), t('update.btn'))
@@ -175,7 +175,7 @@ function build(): HTMLElement[] {
   out.push(...supportSection());
 
   // About
-  out.push(h('div', { class: 'sec-title' }, t('settings.about')));
+  out.push(h('div', { class: 'section-title' }, t('settings.about')));
   out.push(
     h(
       'div',
@@ -189,7 +189,7 @@ function build(): HTMLElement[] {
           h('div', { class: 'set-title' }, `${t('app.title')} · ${t('about.version', { v: state.version })}`),
           h('div', { class: 'hint' }, t('about.offline')),
         ),
-        h('button', { class: 'btn ghost small', title: REPO_URL, onclick: () => void api.openUrl(REPO_URL) }, svg(icons.external), t('about.repo')),
+        h('button', { class: 'btn small', title: REPO_URL, onclick: () => void api.openUrl(REPO_URL) }, svg(icons.external), t('about.repo')),
       ),
     ),
   );

@@ -59,7 +59,7 @@ export interface ThrowRequest {
   type: DieType;
 }
 
-const PICK_COLOR = new Color('#7d93ff');
+const PICK_COLOR = new Color('#8fd9b6');
 const CRIT_HIGH = new Color('#ffb11b');
 const CRIT_LOW = new Color('#ff3030');
 

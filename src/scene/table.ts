@@ -22,8 +22,8 @@ function feltTexture(): CanvasTexture {
   c.height = h;
   const g = c.getContext('2d')!;
   const grad = g.createRadialGradient(w / 2, h / 2, h * 0.1, w / 2, h / 2, w * 0.62);
-  grad.addColorStop(0, '#2c8a5b');
-  grad.addColorStop(1, '#14513a');
+  grad.addColorStop(0, '#2f6e52');
+  grad.addColorStop(1, '#173f30');
   g.fillStyle = grad;
   g.fillRect(0, 0, w, h);
   noise(g, w, h, 90000, 0.16, false);

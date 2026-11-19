@@ -146,7 +146,7 @@ function resultView(): HTMLElement[] {
     h('div', { class: 'res-total' }, h('span', { class: 'big' }, result.total), h('span', { class: 'lbl' }, result.successes ? t('result.successes') : t('result.total'))),
   );
   if (spec.rules.display === 'subtotals' && !result.successes && result.subtotals.length > 1) {
-    out.push(h('div', { class: 'res-sub' }, ...result.subtotals.map((s) => h('span', { class: 'badge accent' }, `${s.type.toUpperCase()}: ${s.sum}`))));
+    out.push(h('div', { class: 'res-sub' }, ...result.subtotals.map((s) => h('span', { class: 'subtotal' }, `${s.type.toUpperCase()}: ${s.sum}`))));
   }
   out.push(h('div', { class: 'res-formula' }, ...formulaNodes(spec, result, cur.label)));
   out.push(h('div', { class: 'chips-dice' }, ...dice.map((d) => dieChip(d, mixed))));
@@ -195,11 +195,11 @@ function historyView(): HTMLElement[] {
     h(
       'div',
       { class: 'bar-head' },
-      h('span', { class: 'grow caps-label' }, `${state.history.length}`),
+      h('span', { class: 'grow count' }, `${state.history.length}`),
       h(
         'button',
         {
-          class: 'btn ghost small danger-text',
+          class: 'btn small danger-text',
           disabled: state.history.length === 0,
           onclick: async () => {
             const ok = await confirmDialog({ title: t('history.clear'), text: t('history.clear.confirm', { n: state.history.length }), confirm: t('dlg.delete'), danger: true });
@@ -232,7 +232,7 @@ function historyItem(e: HistoryEntry): HTMLElement {
     h('div', { class: 'li-dice' }, ...diceLine(e.dice)),
     h(
       'div',
-      { class: 'li-top', style: 'margin-top:4px' },
+      { class: 'li-top', style: 'margin-top:8px' },
       h('div', { class: 'li-time', style: 'flex:1' }, fmtTime(e.ts)),
       h(
         'div',
@@ -284,7 +284,7 @@ function statsView(): HTMLElement[] {
           'div',
           { class: 'bars' },
           ...s.dist.map((c, i) =>
-            h('div', { class: 'bar', style: `height:${Math.max(c ? 4 : 1, (c / max) * 100)}%`, title: `${type === 'd100' ? `${i * 10 + 1}–${i * 10 + 10}` : i + 1}: ${c}` }),
+            h('div', { class: `bar${c === max ? ' peak' : ''}`, style: `height:${Math.max(c ? 4 : 1, (c / max) * 100)}%`, title: `${type === 'd100' ? `${i * 10 + 1}–${i * 10 + 10}` : i + 1}: ${c}` }),
           ),
         ),
         h('div', { class: 'bar-axis' }, h('span', null, type === 'd100' ? '1' : '1'), h('span', null, type === 'd100' ? '100' : String(n))),
@@ -298,7 +298,7 @@ function statsView(): HTMLElement[] {
 // ───────────── presets ─────────────
 
 function presetsView(): HTMLElement[] {
-  const nameInput = h('input', { class: 'text-input', type: 'text', maxlength: 60, placeholder: t('presets.name.ph'), value: presetDraft }) as HTMLInputElement;
+  const nameInput = h('input', { class: 'input text-input', type: 'text', maxlength: 60, placeholder: t('presets.name.ph'), value: presetDraft }) as HTMLInputElement;
   nameInput.value = presetDraft;
   nameInput.addEventListener('input', () => (presetDraft = nameInput.value));
   const save = () => {
@@ -308,7 +308,7 @@ function presetsView(): HTMLElement[] {
     if (e.key === 'Enter') save();
     e.stopPropagation();
   });
-  const out: HTMLElement[] = [h('div', { class: 'preset-save' }, nameInput, h('button', { class: 'btn small primary', onclick: save }, svg(icons.plus), t('dlg.save')))];
+  const out: HTMLElement[] = [h('div', { class: 'preset-save' }, nameInput, h('button', { class: 'btn small', onclick: save }, svg(icons.plus), t('dlg.save')))];
   if (!state.config.presets.length) out.push(h('div', { class: 'empty-note' }, t('presets.empty')));
   for (const p of state.config.presets) {
     out.push(
@@ -348,7 +348,7 @@ function presetsView(): HTMLElement[] {
               },
               svg(icons.trash),
             ),
-            h('button', { class: 'btn small primary', style: 'margin-left:6px', disabled: state.busy, onclick: () => runPreset(p) }, svg(icons.play), t('presets.run')),
+            h('button', { class: 'btn small', style: 'margin-left:8px', disabled: state.busy, onclick: () => runPreset(p) }, svg(icons.play), t('presets.run')),
           ),
         ),
       ),
@@ -375,7 +375,7 @@ function toggle(on: boolean, onchange: (v: boolean) => void, label: string): HTM
 }
 
 function numField(value: number, min: number, max: number, onchange: (v: number) => void, label?: string): HTMLInputElement {
-  const el = h('input', { class: 'num-input', type: 'number', min, max, step: 1, 'aria-label': label ?? '' }) as HTMLInputElement;
+  const el = h('input', { class: 'input num-input', type: 'number', min, max, step: 1, 'aria-label': label ?? '' }) as HTMLInputElement;
   el.value = String(value);
   el.addEventListener('change', () => {
     const v = Math.max(min, Math.min(max, Math.round(Number(el.value) || 0)));
@@ -399,7 +399,7 @@ function rule(title: string, hint: string, on: boolean | null, onToggle: ((v: bo
 function rulesView(): HTMLElement[] {
   const spec = state.config.spec;
   const r = spec.rules;
-  const out: HTMLElement[] = [h('div', { class: 'hint', style: 'margin-bottom:10px' }, t('rules.intro'))];
+  const out: HTMLElement[] = [h('div', { class: 'hint', style: 'margin-bottom:12px' }, t('rules.intro'))];
 
   out.push(
     rule(
@@ -526,8 +526,8 @@ function rulesView(): HTMLElement[] {
     h(
       'button',
       {
-        class: 'btn ghost small',
-        style: 'margin-top:4px',
+        class: 'btn small',
+        style: 'margin-top:8px',
         onclick: () => {
           const s = JSON.parse(JSON.stringify(state.config.spec)) as RollSpec;
           s.rules = defaultRules();

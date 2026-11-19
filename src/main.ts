@@ -18,7 +18,7 @@ const win = inTauri ? getCurrentWindow() : null;
 
 // ───────────── window frame ─────────────
 
-const brandName = h('span', { class: 'brand-name' }, 'DICE ROLLER');
+const brandName = h('span', { class: 'brand-name' }, 'Dice Roller');
 const updBtn = h('button', { class: 'upd-banner', hidden: true, onclick: () => void applyUpdate() });
 const btnPanel = h('button', { class: 'tb-btn', onclick: () => { state.config.panelOpen = !state.config.panelOpen; saveConfig(); notify(); } }, svg(icons.panel));
 const btnSettings = h('button', { class: 'tb-btn', onclick: () => openSettings() }, svg(icons.gear));

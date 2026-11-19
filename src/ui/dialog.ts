@@ -64,7 +64,7 @@ export function confirmDialog(o: { title: string; text: string; confirm: string;
       h(
         'div',
         { class: 'modal-actions' },
-        h('button', { class: 'btn ghost', onclick: () => finish(false) }, t('dlg.cancel')),
+        h('button', { class: 'btn', onclick: () => finish(false) }, t('dlg.cancel')),
         h('button', { class: `btn ${o.danger ? 'danger' : 'primary'}`, autofocus: true, onclick: () => finish(true) }, o.confirm),
       ),
     );
@@ -81,7 +81,7 @@ export function promptDialog(o: { title: string; value: string; confirm: string 
       resolve(v);
       m.close();
     };
-    const input = h('input', { class: 'text-input', type: 'text', maxlength: 60, autofocus: true, value: o.value });
+    const input = h('input', { class: 'input text-input', type: 'text', maxlength: 60, autofocus: true, value: o.value });
     input.value = o.value;
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') finish(input.value.trim() || null);
@@ -94,7 +94,7 @@ export function promptDialog(o: { title: string; value: string; confirm: string 
       h(
         'div',
         { class: 'modal-actions' },
-        h('button', { class: 'btn ghost', onclick: () => finish(null) }, t('dlg.cancel')),
+        h('button', { class: 'btn', onclick: () => finish(null) }, t('dlg.cancel')),
         h('button', { class: 'btn primary', onclick: () => finish(input.value.trim() || null) }, o.confirm),
       ),
     );

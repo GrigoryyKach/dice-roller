@@ -193,6 +193,13 @@ export function parseJson(text: string | null): unknown {
 
 type Listener = () => void;
 
+export interface UpdatePhase {
+  phase: 'idle' | 'downloading' | 'verifying' | 'installing' | 'restarting' | 'failed';
+  done: number;
+  total: number;
+  error?: string | null;
+}
+
 export const state = {
   config: defaultConfig(),
   history: [] as HistoryEntry[],
@@ -204,6 +211,10 @@ export const state = {
   busy: false,
   update: null as { version: string; url: string } | null,
   updateStatus: 'idle' as 'idle' | 'checking' | 'latest' | 'available' | 'failed',
+  /** Progress of a running self-update (null when none). */
+  updatePhase: null as UpdatePhase | null,
+  /** Test hook: start the update right after the check finds one (`DICE_ROLLER_AUTO_UPDATE=1`). */
+  autoUpdate: false,
   version: '1.0.0',
   dataDir: '',
   webgl: true,
@@ -240,6 +251,25 @@ export function saveConfig(): void {
 export function saveHistory(): void {
   saveSoon('history', () => JSON.stringify(state.history));
   saveSoon('stats', () => JSON.stringify(state.allStats));
+}
+
+/** Writes config, history and statistics right now (cancelling the delayed saves). `false` if any write failed. */
+export async function flushAll(): Promise<boolean> {
+  const files: [keyof typeof saveTimers, string][] = [
+    ['config', JSON.stringify(state.config, null, 1)],
+    ['history', JSON.stringify(state.history)],
+    ['stats', JSON.stringify(state.allStats)],
+  ];
+  let ok = true;
+  for (const [name, text] of files) {
+    clearTimeout(saveTimers[name]);
+    try {
+      await api.saveJson(name, text);
+    } catch {
+      ok = false;
+    }
+  }
+  return ok;
 }
 
 export function nextEntryId(): number {

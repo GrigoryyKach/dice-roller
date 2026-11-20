@@ -1,6 +1,7 @@
 // Bridge to the Rust side (config files, updates, window). Falls back to localStorage in a plain browser (dev server).
 
 import { invoke } from '@tauri-apps/api/core';
+import type { UpdatePhase } from './store';
 
 export const REPO = 'GrigoryyKach/dice-roller';
 export const REPO_URL = `https://github.com/${REPO}`;
@@ -15,6 +16,7 @@ export interface InitData {
   version: string;
   args: string[];
   dataDir: string;
+  autoUpdate?: boolean;
 }
 
 export const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -51,10 +53,15 @@ export const api = {
     return invoke<{ tag: string; url: string } | null>('check_update', { repo: REPO });
   },
 
-  /** Hands the update to the NIMVORO launcher. Returns true when the app should close. */
-  async applyUpdate(): Promise<boolean> {
-    if (!inTauri) return false;
-    return invoke<boolean>('apply_update', { id: TOOL_ID, repo: REPO });
+  /** Starts the update: `launcher` (the app should close), `self` (it updates itself: poll `updatePhase`) or `page`. */
+  async applyUpdate(): Promise<'launcher' | 'self' | 'page'> {
+    if (!inTauri) return 'page';
+    return invoke<'launcher' | 'self' | 'page'>('apply_update', { id: TOOL_ID, repo: REPO });
+  },
+
+  async updatePhase(): Promise<UpdatePhase> {
+    if (!inTauri) return { phase: 'idle', done: 0, total: 0 };
+    return invoke<UpdatePhase>('update_phase');
   },
 
   async openUrl(url: string): Promise<void> {

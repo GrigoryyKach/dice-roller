@@ -1,7 +1,8 @@
 //! Dice Roller: the Rust side of the Tauri app.
 //!
 //! - config, history and statistics files with atomic writes and BOM-tolerant reads;
-//! - the NIMVORO contract: language marker next to the exe, update check, hand-off to the launcher;
+//! - the NIMVORO contract: language marker next to the exe, update check, hand-off to the launcher,
+//!   self-update without the launcher (`selfupdate.rs`, shared with the other tools);
 //! - window size and position, restored onto a connected monitor.
 //!
 //! The 3D scene, the physics and the dice rules live in the TypeScript frontend (`src/`).
@@ -10,9 +11,17 @@ use serde::{Deserialize, Serialize};
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Command;
+#[cfg(not(windows))]
+use std::process::Stdio;
 use std::sync::Mutex;
-use tauri::{Manager, PhysicalPosition, PhysicalSize, WindowEvent};
+use tauri::{Manager, PhysicalPosition, PhysicalSize, State, WindowEvent};
+
+pub mod selfupdate;
+use selfupdate::{Phase, Release, Route, UpdateError};
+
+/// Tool id in the NIMVORO catalog.
+const TOOL_ID: &str = "dice-roller";
 
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
@@ -76,6 +85,8 @@ struct InitData {
     version: &'static str,
     args: Vec<String>,
     data_dir: String,
+    /// Test hook: `DICE_ROLLER_AUTO_UPDATE=1` starts the update as soon as a newer version is found.
+    auto_update: bool,
 }
 
 #[tauri::command]
@@ -90,6 +101,7 @@ fn init_state() -> InitData {
         version: env!("CARGO_PKG_VERSION"),
         args: std::env::args().skip(1).collect(),
         data_dir: dir.to_string_lossy().into_owned(),
+        auto_update: std::env::var(selfupdate::env_name(TOOL_ID, "AUTO_UPDATE")).is_ok_and(|v| v == "1"),
     }
 }
 
@@ -137,27 +149,28 @@ struct Latest {
     url: String,
 }
 
+/// Release found by the last check, and the progress of a running self-update.
+pub struct Upd {
+    release: Mutex<Option<Release>>,
+    phase: selfupdate::Shared,
+}
+
+impl Default for Upd {
+    fn default() -> Self {
+        Self { release: Mutex::new(None), phase: std::sync::Arc::new(Mutex::new(Phase::Idle)) }
+    }
+}
+
 /// Latest release of `repo` through curl.exe (ships with Windows), or None when the check failed.
 #[tauri::command]
-fn check_update(repo: String) -> Option<Latest> {
+fn check_update(repo: String, upd: State<Upd>) -> Option<Latest> {
     if !valid_repo(&repo) {
         return None;
     }
-    let url = format!("https://api.github.com/repos/{repo}/releases/latest");
-    let mut cmd = Command::new(if cfg!(windows) { "curl.exe" } else { "curl" });
-    cmd.args(["-sfL", "--max-time", "10", "-H", "Accept: application/vnd.github+json", "-A", "NIMVORO-updater", &url])
-        .stdin(Stdio::null())
-        .stderr(Stdio::null());
-    #[cfg(windows)]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-    let out = cmd.output().ok()?;
-    if !out.status.success() {
-        return None;
-    }
-    let v: serde_json::Value = serde_json::from_slice(&out.stdout).ok()?;
-    let tag = v.get("tag_name")?.as_str()?.to_string();
-    let url = v.get("html_url").and_then(|u| u.as_str()).unwrap_or_default().to_string();
-    Some(Latest { tag, url })
+    let r = selfupdate::fetch_release(TOOL_ID, &repo)?;
+    let latest = Latest { tag: r.tag.clone(), url: r.html_url.clone() };
+    *upd.release.lock().ok()? = Some(r);
+    Some(latest)
 }
 
 /// `owner/name` with the characters GitHub allows.
@@ -168,19 +181,63 @@ pub fn valid_repo(repo: &str) -> bool {
     ok(a) && ok(b)
 }
 
-/// Hands the update to the launcher (`<launcher> --update <id>`). Returns true when the app should exit.
-/// Without a launcher the release page opens in the browser instead.
+/// Starts the update. Returns `"launcher"` (handed to `<launcher> --update <id>`, the app should exit),
+/// `"self"` (the app updates itself in the background: poll `update_phase`) or `"page"` (the release page was opened).
 #[tauri::command]
-fn apply_update(id: String, repo: String) -> bool {
-    if let Some(exe) = launcher_path() {
-        if Command::new(&exe).args(["--update", &id]).spawn().is_ok() {
-            return true;
+fn apply_update(id: String, repo: String, upd: State<Upd>) -> &'static str {
+    let busy = !matches!(upd.phase.lock().map(|p| p.clone()), Ok(Phase::Idle | Phase::Failed(_)) | Err(_));
+    if busy {
+        return "self";
+    }
+    let dir = std::env::current_exe().ok().and_then(|e| e.parent().map(PathBuf::from));
+    let writable = dir.as_deref().is_some_and(selfupdate::dir_writable);
+    match selfupdate::choose_route(launcher_path(), writable) {
+        Route::Launcher(exe) => {
+            if Command::new(&exe).args(["--update", &id]).spawn().is_ok() {
+                return "launcher";
+            }
         }
+        Route::SelfUpdate => {
+            let release = upd.release.lock().ok().and_then(|g| g.clone());
+            if let Some(r) = release {
+                selfupdate::set_phase(&upd.phase, Phase::Downloading { done: 0, total: 0 });
+                selfupdate::run(TOOL_ID, r, upd.phase.clone(), selfupdate::Restart::default());
+                return "self";
+            }
+        }
+        Route::OpenPage => {}
     }
     if valid_repo(&repo) {
         open_in_browser(&format!("https://github.com/{repo}/releases/latest"));
     }
-    false
+    "page"
+}
+
+/// Progress of the self-update for the UI: `{ phase, done, total, error }`.
+#[tauri::command]
+fn update_phase(upd: State<Upd>) -> serde_json::Value {
+    let p = upd.phase.lock().map(|p| p.clone()).unwrap_or(Phase::Idle);
+    let (name, done, total, error) = match p {
+        Phase::Idle => ("idle", 0, 0, None),
+        Phase::Downloading { done, total } => ("downloading", done, total, None),
+        Phase::Verifying => ("verifying", 0, 0, None),
+        Phase::Installing => ("installing", 0, 0, None),
+        Phase::Restarting => ("restarting", 0, 0, None),
+        Phase::Failed(e) => ("failed", 0, 0, Some(error_code(e))),
+    };
+    serde_json::json!({ "phase": name, "done": done, "total": total, "error": error })
+}
+
+fn error_code(e: UpdateError) -> &'static str {
+    match e {
+        UpdateError::Download => "download",
+        UpdateError::BadDigest => "digest",
+        UpdateError::NoDigest => "nodigest",
+        UpdateError::NoAsset | UpdateError::Extract | UpdateError::BadPackage => "package",
+        UpdateError::SwapFailed => "install",
+        UpdateError::Restart => "restart",
+        UpdateError::SaveFailed => "save",
+    }
 }
 
 #[cfg(windows)]
@@ -285,14 +342,17 @@ fn track_window(window: &tauri::Window, event: &WindowEvent) {
 }
 
 pub fn run() {
+    // After a self-update: wait for the old process, then remove its leftovers.
+    selfupdate::startup(TOOL_ID);
     tauri::Builder::default()
+        .manage(Upd::default())
         .manage(Live(Mutex::new(WinState::default())))
         .setup(|app| {
             restore_window(app.handle());
             Ok(())
         })
         .on_window_event(|window, event| track_window(window, event))
-        .invoke_handler(tauri::generate_handler![init_state, save_json, write_text, exit_app, check_update, apply_update, open_url])
+        .invoke_handler(tauri::generate_handler![init_state, save_json, write_text, exit_app, check_update, apply_update, update_phase, open_url])
         .run(tauri::generate_context!())
         .expect("error while running Dice Roller");
 }

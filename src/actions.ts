@@ -1,6 +1,6 @@
 // Application logic: building the roll, running it (animated or quick), results, history, presets, updates.
 
-import { api, isNewer } from './api';
+import { api, isNewer, REPO_URL } from './api';
 import { setLang, t } from './i18n';
 import { cryptoDie, finalize, rollInstant, RollSession } from './rules/engine';
 import { formatRoll } from './rules/format';
@@ -10,6 +10,7 @@ import type { Flick } from './sim/physics';
 import type { Marks, Stage } from './scene/stage';
 import {
   clearHistory,
+  flushAll,
   type HistoryEntry,
   nextEntryId,
   notify,
@@ -21,7 +22,9 @@ import {
   state,
   totalDice,
 } from './store';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { toast } from './ui/toast';
+import { renderUpdating } from './ui/updating';
 
 export const ctx: { stage: Stage | null } = { stage: null };
 
@@ -346,6 +349,43 @@ export async function checkUpdates(): Promise<void> {
   notify();
 }
 
+let polling: number | undefined;
+
+/** One click: launcher hand-off, or a self-update whose progress is polled until the app restarts or fails. */
 export async function applyUpdate(): Promise<void> {
-  if (await api.applyUpdate()) await api.exit();
+  // Save everything first; if that fails the update is not started and the app keeps running.
+  if (!(await flushAll())) {
+    state.updatePhase = { phase: 'failed', done: 0, total: 0, error: 'save' };
+    notify();
+    return;
+  }
+  const how = await api.applyUpdate();
+  if (how === 'launcher') {
+    await api.exit();
+  } else if (how === 'self') {
+    window.clearInterval(polling);
+    const tick = async () => {
+      const prev = state.updatePhase?.phase;
+      state.updatePhase = await api.updatePhase();
+      // Only a change of phase re-renders the app; ticks inside a phase just move the bar.
+      if (state.updatePhase.phase === 'restarting' && prev !== 'restarting') {
+        // The new version is running and waits for us: save again and close by the normal path (window state is saved on close).
+        window.clearInterval(polling);
+        await flushAll();
+        notify();
+        await getCurrentWindow().close();
+        return;
+      }
+      if (state.updatePhase.phase !== prev) notify();
+      else renderUpdating();
+      if (state.updatePhase.phase === 'failed') window.clearInterval(polling);
+    };
+    polling = window.setInterval(() => void tick(), 150);
+    void tick();
+  }
+}
+
+/** The manual fallback of a failed update. */
+export async function openReleasePage(): Promise<void> {
+  await api.openUrl(state.update?.url || REPO_URL);
 }

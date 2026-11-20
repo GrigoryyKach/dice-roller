@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { isNewer } from './api';
-import { defaultConfig, parseJson, sanitizeConfig, sanitizeSpec } from './store';
+import { describe, expect, it, vi } from 'vitest';
+import { api, isNewer } from './api';
+import { defaultConfig, flushAll, parseJson, sanitizeConfig, sanitizeSpec, state } from './store';
 
 describe('config loading', () => {
   it('falls back to defaults for garbage', () => {
@@ -47,5 +47,23 @@ describe('update check', () => {
     expect(isNewer('v1.0.0', '1.0.0')).toBe(false);
     expect(isNewer('0.9.0', '1.0.0')).toBe(false);
     expect(isNewer('v1.10.0', '1.9.0')).toBe(true);
+  });
+});
+
+describe('flush before an update', () => {
+  it('writes the latest config, history and stats immediately', async () => {
+    const spy = vi.spyOn(api, 'saveJson').mockResolvedValue();
+    state.config.speed = 2;
+    expect(await flushAll()).toBe(true);
+    const names = spy.mock.calls.map((c) => c[0]).sort();
+    expect(names).toEqual(['config', 'history', 'stats']);
+    expect(JSON.parse(spy.mock.calls.find((c) => c[0] === 'config')![1]).speed).toBe(2);
+    spy.mockRestore();
+  });
+
+  it('reports a failed write so the update can be aborted', async () => {
+    const spy = vi.spyOn(api, 'saveJson').mockRejectedValue(new Error('disk full'));
+    expect(await flushAll()).toBe(false);
+    spy.mockRestore();
   });
 });

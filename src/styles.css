@@ -303,3 +303,12 @@ label.set-row { cursor: pointer; }
   .side { width: 340px; }
   .tray-right { width: 288px; }
 }
+
+/* self-update overlay */
+.upd-modal { max-width: 420px; }
+.upd-head { padding: 20px 24px 0; }
+.upd-body { padding: 8px 24px 24px; display: flex; flex-direction: column; gap: 8px; }
+.upd-line { font-size: var(--fs-small); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.upd-bar { height: 4px; border-radius: 2px; background: var(--raised); border: 1px solid var(--line); overflow: hidden; }
+.upd-fill { height: 100%; width: 100%; background: var(--accent); border-radius: 2px; transform-origin: left center; transform: scaleX(0); }
+.upd-err { color: var(--bad-text); font-size: var(--fs-small); }

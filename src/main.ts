@@ -12,6 +12,7 @@ import { panelEl, renderPanel } from './ui/panel';
 import { notifySettings, openSettings } from './ui/settings';
 import { toast } from './ui/toast';
 import { renderTray, trayEl } from './ui/tray';
+import { renderUpdating } from './ui/updating';
 
 const app = document.getElementById('app')!;
 const win = inTauri ? getCurrentWindow() : null;
@@ -45,6 +46,7 @@ stageHost.append(hint, totalBox);
 app.append(titlebar, h('div', { class: 'main' }, h('div', { class: 'workspace' }, stageHost, panelEl), trayEl));
 
 function renderChrome(): void {
+  renderUpdating();
   document.title = t('app.title');
   btnPanel.title = btnPanel.ariaLabel = t('tb.panel');
   btnSettings.title = btnSettings.ariaLabel = t('tb.settings');
@@ -105,6 +107,7 @@ document.addEventListener('contextmenu', (e) => e.preventDefault());
 async function boot(): Promise<void> {
   const init = await api.init();
   loadState(init);
+  state.autoUpdate = !!init.autoUpdate;
   // Language: the config wins, then the launcher marker, then English; the choice is saved.
   const fromConfig = state.config.language;
   const lang = fromConfig ?? (isLang(init.markerLanguage) ? init.markerLanguage : 'en');
@@ -133,7 +136,11 @@ async function boot(): Promise<void> {
   renderAll();
   refreshMarks();
 
-  if (state.config.checkUpdates && inTauri) void checkUpdates();
+  if (state.config.checkUpdates && inTauri) {
+    void checkUpdates().then(() => {
+      if (state.autoUpdate && state.update) void applyUpdate();
+    });
+  }
 }
 
 async function runFairnessMode(n: number, out: string | null, dataDir: string): Promise<void> {

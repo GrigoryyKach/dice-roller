@@ -97,6 +97,10 @@ Files are written atomically (temporary file, then rename) and read tolerantly (
 The app checks the latest GitHub release on start (switch it off in Settings) and has a **Check now** button. An update is handed to the NIMVORO launcher (`<launcher> --update dice-roller`, found through `%APPDATA%\NIMVORO\launcher.json` on Windows or `~/.config/NIMVORO/launcher.json` on Linux).
 Without the launcher, the releases page opens in the browser. This is the only network use.
 
+Without the launcher, the **Update** button updates the app by itself: it downloads the release archive from GitHub, checks its SHA-256 against the digest GitHub publishes for the asset, swaps the files (the old ones become `*.old`, are removed on the next start, and any failure rolls back) and restarts. If the app folder is not writable, the release page opens instead. Settings and the launcher language marker are never replaced.
+
+Without the launcher, **Update** updates the app by itself with a progress bar in the window: it downloads the release archive, checks its SHA-256 against the digest GitHub publishes for the asset, swaps the files (the old ones become `*.old` and are removed on the next start; any failure rolls back) and restarts. If the app folder is not writable, the release page opens instead.
+
 ## Physics and fairness
 
 Dice are convex rigid bodies simulated with [Rapier](https://rapier.rs) (WebAssembly, deterministic, bundled into the exe). Each throw gives every die a random start position, velocity and spin. The simulation runs until every die rests; a die that stays cocked on another die or a rail is nudged. The result is the face whose normal points most nearly up.

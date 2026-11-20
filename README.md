@@ -118,7 +118,6 @@ npm test             # vitest: rules, notation, dice geometry, physics and fairn
 npm run build        # type check and bundle the UI
 npx tauri build --no-bundle   # builds src-tauri/target/release/DiceRoller.exe (DiceRoller on Linux)
 cargo test --manifest-path src-tauri/Cargo.toml
-npm run icon         # regenerates assets/icon.png, assets/icon.ico and src-tauri/icons
 ```
 
 Locally there is no MSVC linker, so the GNU (MinGW) toolchain is used; CI builds with MSVC. `src-tauri/build.rs` hides MinGW's default manifest so that the Tauri manifest is kept.
